@@ -1,0 +1,46 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
+using NUnit.Framework;
+
+namespace Dungeon
+{
+	public class DungeonTask
+	{
+		public static MoveDirection[] FindShortestPath(Map map)
+		{
+			return ToDirectionsArray(FindShortestPathWithChest(map) ?? FindPathToExit(map) ?? new List<Point>());
+		}
+
+		private static MoveDirection[] ToDirectionsArray(IEnumerable<Point> path) =>
+			path.Zip(path.Skip(1), (first, second) =>
+				{
+					if (first.X < second.X)
+						return MoveDirection.Right;
+					if (first.X > second.X)
+						return MoveDirection.Left;
+					if (first.Y < second.Y)
+						return MoveDirection.Down;
+					return MoveDirection.Up;
+				})
+				.ToArray();
+
+		private static IEnumerable<Point> FindShortestPathWithChest(Map map) =>
+			BfsTask.FindPaths(map, map.InitialPosition, map.Chests)
+				.Join(BfsTask.FindPaths(map, map.Exit, map.Chests), i => i.Value, o => o.Value,
+					(i, o) => new Tuple<SinglyLinkedList<Point>, SinglyLinkedList<Point>>(i, o.Previous))
+				.OrderBy(t => t.Item1.Length + t.Item2.Length)
+				.Take(1)
+				.Select(y => y.Item1.ToList().AsEnumerable().Reverse().Concat(y.Item2.ToList()))
+				.FirstOrDefault();
+		
+		private static IEnumerable<Point> FindPathToExit(Map map) => 
+			BfsTask.FindPaths(map, map.InitialPosition, new[] {map.Exit})
+				.Select(a => a.ToList().AsEnumerable().Reverse())
+				.FirstOrDefault();
+	}
+}
