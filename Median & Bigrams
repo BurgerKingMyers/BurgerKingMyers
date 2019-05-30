@@ -1,0 +1,36 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.SqlServer.Server;
+
+namespace linq_slideviews
+{
+	public static class ExtensionsTask
+	{
+		public static double Median(this IEnumerable<double> items)
+		{
+			var temp = items.ToList();
+			if (temp.Count == 0)
+				throw new InvalidOperationException();
+			temp.Sort();
+			return temp.Count % 2 == 1 ? temp[temp.Count / 2] : (temp[temp.Count / 2] + temp[temp.Count / 2 - 1]) / 2;
+		}
+
+		public static IEnumerable<Tuple<T, T>> Bigrams<T>(this IEnumerable<T> items)
+		{
+			var firstIteration = true;
+			T prev = default(T);
+			foreach (var item in items)
+				if (firstIteration)
+				{
+					prev = item;
+					firstIteration = false;
+				}
+				else
+				{
+					yield return new Tuple<T, T>(prev,item);
+					prev = item;
+				}
+		}
+	}
+}
