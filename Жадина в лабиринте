@@ -1,0 +1,32 @@
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using Greedy.Architecture;
+using Greedy.Architecture.Drawing;
+using NUnit.Framework;
+
+namespace Greedy
+{
+	public class GreedyPathFinder : IPathFinder
+	{
+		public List<Point> FindPathToCompleteGoal(State state)
+		{
+			var pathFinder = new DijkstraPathFinder();
+			var targets = state.Chests;
+			var result = new List<Point>();
+			while (true)
+			{
+				if (state.Scores == state.Goal) return result;
+				var path = pathFinder.GetPathsByDijkstra(state, state.Position, targets).FirstOrDefault();
+				if (path == null || state.Energy - path.Cost < 0 || 
+				    path.Path.Count == 1 && !targets.Contains(path.End)) 
+					return new List<Point>();
+				result.AddRange(path.Path.Skip(1));
+				state.Energy -= path.Cost;
+				state.Position = path.End;
+				state.Scores++;
+				targets.Remove(path.End);
+			}
+		}
+	}
+}
