@@ -1,0 +1,23 @@
+using System.Numerics;
+
+
+namespace Tickets
+{
+    public static class TicketsTask
+    {
+        public static BigInteger Solve(int len, int sum)
+        {
+            if (sum % 2 == 1) return 0;
+            sum /= 2;
+            var table = new BigInteger[len + 1, sum + 1];
+            table[0, 0] = 1;
+            for (var i = 1; i <= len; i++)
+            for (var j = 0; j <= sum; j++)
+            for (var k = 0; k < 10; k++)
+                if (j - k >= 0)
+                    table[i, j] += table[i - 1, j - k];
+
+            return table[len, sum] * table[len, sum];
+        }
+    }
+}
