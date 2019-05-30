@@ -1,0 +1,130 @@
+using System;
+using System.Collections.Generic;
+
+namespace Clones
+{
+	public class CloneVersionSystem : ICloneVersionSystem
+	{
+		private List<Clone> clones = new List<Clone>();
+
+		public CloneVersionSystem()
+		{
+			clones.Add(new Clone());
+		}
+
+		public string Execute(string query)
+		{
+			var cmd = Resolve(query);
+			if (cmd.Item1 == "learn")
+				clones[cmd.Item2].Learn(cmd.Item3);
+			else if (cmd.Item1 == "rollback")
+				clones[cmd.Item2].Rollback();
+			else if (cmd.Item1 == "relearn")
+				clones[cmd.Item2].Relearn();
+			else if (cmd.Item1 == "check")
+				return clones[cmd.Item2].Check();
+			else if (cmd.Item1 == "clone")
+				clones.Add(clones[cmd.Item2].Copy());
+
+			return null;
+		}
+
+		private Tuple<string, int, string> Resolve(string cmd)
+		{
+			var temp = cmd.Split();
+			if (temp.Length == 2)
+				return new Tuple<string, int, string>(temp[0], int.Parse(temp[1]) - 1, "");
+			return new Tuple<string, int, string>(temp[0], int.Parse(temp[1]) - 1, temp[2]);
+		}
+	}
+
+	public class Clone
+	{
+		private LinkedStack<string> learnHistory = new LinkedStack<string>();
+		private LinkedStack<string> rollbackHistory = new LinkedStack<string>();
+
+		public Clone()
+		{
+			learnHistory.Push("basic");
+		}
+
+		public Clone(LinkedStack<string> learnHistory, LinkedStack<string> rollbackHistory)
+		{
+			this.learnHistory = new LinkedStack<string>(learnHistory);
+			this.rollbackHistory = new LinkedStack<string>(rollbackHistory);
+		}
+
+		public void Learn(string program)
+		{
+			learnHistory.Push(program);
+			rollbackHistory = new LinkedStack<string>();
+		}
+
+		public void Rollback()
+		{
+			rollbackHistory.Push(learnHistory.Pop());
+		}
+
+		public void Relearn()
+		{
+			learnHistory.Push(rollbackHistory.Pop());
+		}
+
+		public string Check()
+		{
+			return learnHistory.First();
+		}
+
+		public Clone Copy()
+		{
+			return new Clone(learnHistory, rollbackHistory);
+		}
+	}
+
+	public class LinkedStack<T>
+	{
+		private Item<T> head;
+		public int Count { get; private set; }
+
+		public LinkedStack()
+		{
+		}
+
+		public LinkedStack(LinkedStack<T> source)
+		{
+			head = source.head;
+		}
+
+		public void Push(T item)
+		{
+			var newItem = new Item<T>(item, head);
+			head = newItem;
+			Count++;
+		}
+
+		public T Pop()
+		{
+			var item = head.Value;
+			head = head.Prev;
+			Count--;
+			return item;
+		}
+
+		public T First()
+		{
+			return head.Value;
+		}
+	}
+
+	public class Item<TItem>
+	{
+		public TItem Value;
+		public Item<TItem> Prev;
+
+		public Item(TItem value, Item<TItem> prev)
+		{
+			Value = value;
+			Prev = prev;
+		}
+	}
+}
