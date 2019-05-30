@@ -1,0 +1,17 @@
+using System.Drawing;
+using System.Linq;
+
+namespace func_rocket
+{
+	public class ForcesTask
+	{
+		public static RocketForce GetThrustForce(double forceValue) =>
+			r => new Vector(forceValue, 0).Rotate(r.Direction);
+
+		public static RocketForce ConvertGravityToForce(Gravity gravity, Size spaceSize) =>
+			r => gravity(spaceSize, r.Location);
+
+		public static RocketForce Sum(params RocketForce[] forces) => r =>
+			forces.Aggregate(new Vector(0, 0), (current, force) => current + force(r));
+	}
+}
