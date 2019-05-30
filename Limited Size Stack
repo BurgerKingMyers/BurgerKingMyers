@@ -1,0 +1,74 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Remoting.Messaging;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace TodoApplication
+{
+    public class LimitedSizeStack<T>
+    {
+        private Element<T> head;
+        private Element<T> tail;
+
+        public LimitedSizeStack(int limit)
+        {
+            this.Limit = limit;
+        }
+        
+        public void Push(T item)
+        {
+            var newElement = new Element<T>(null, item);
+            if (Count == 0)
+                tail = newElement;
+            else
+            {
+                if (Count == Limit)
+                {
+                    tail = tail.Next;
+                    Count--;
+                }
+                head.Next = newElement;
+            }
+
+            head = newElement;
+            Count++;
+        }
+
+        public T Pop()
+        {
+            var item = head.Item;
+            if (Count == 1)
+            {
+                head = null;
+                tail = null;
+            }
+            else
+            {
+                var lastElement = tail;
+                while (lastElement.Next != head)
+                    lastElement = lastElement.Next;
+                lastElement.Next = null;
+                head = lastElement;
+            }
+            Count--;
+            return item;
+        }
+        
+        public int Count { get; private set; }
+        private int Limit { get; }
+    }
+
+    public class Element<T>
+    {
+        public Element<T> Next;
+        public readonly T Item;
+
+        public Element(Element<T> next, T item)
+        {
+            Next = next;
+            Item = item;
+        }
+    }
+}
