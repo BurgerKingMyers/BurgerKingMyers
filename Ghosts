@@ -21,33 +21,17 @@ namespace hashes
 		private Vector vector = new Vector(1, 1);
 		private Cat cat = new Cat("droggeljug","Attack Helicopter",new DateTime(31241376000000000L));
 		private Segment segment = new Segment(new Vector(1,1),new Vector(2,2));
-		private Document document  = new Document("Report",new ASCIIEncoding(),content);
 		private Robot robot = new Robot("14141",973342);
 		private static byte[] content = Enumerable.Repeat((byte)6, 10).ToArray();
-			
-		Vector IFactory<Vector>.Create()
-		{
-			return vector;
-		}
+		
+		Vector IFactory<Vector>.Create() => vector;
 
-		Segment IFactory<Segment>.Create()
-		{
-			return segment;
-		}
+		Segment IFactory<Segment>.Create() => segment;
 
-		Document IFactory<Document>.Create()
-		{
-			return document;
-		}
+		Document IFactory<Document>.Create() => new Document("Report",new ASCIIEncoding(),content);
 
-		Cat IFactory<Cat>.Create()
-		{
-			return cat;
-		}
+		Cat IFactory<Cat>.Create() => cat;
 
-		Robot IFactory<Robot>.Create()
-		{
-			return robot;
-		}
+		Robot IFactory<Robot>.Create() => robot;
 	}
 }
