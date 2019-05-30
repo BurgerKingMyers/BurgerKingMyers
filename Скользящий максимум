@@ -1,0 +1,25 @@
+using System;
+using System.Collections.Generic;
+
+namespace yield
+{
+	public static class MovingMaxTask
+	{
+		public static IEnumerable<DataPoint> MovingMax(this IEnumerable<DataPoint> data, int windowWidth)
+		{
+			var max = new LinkedList<Tuple<double,int>>();
+			var count = 0;
+			foreach (var point in data)
+			{
+				count++;
+				if (max.Count != 0 && count - max.First.Value.Item2 >= windowWidth)
+					max.RemoveFirst();
+				while (max.Count != 0 && max.Last.Value.Item1 <= point.OriginalY )
+					max.RemoveLast();
+				max.AddLast(new Tuple<double, int>(point.OriginalY, count));
+				point.MaxY = max.First.Value.Item1;
+				yield return point;
+			}
+		}
+	}
+}
