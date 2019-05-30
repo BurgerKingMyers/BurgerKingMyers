@@ -1,0 +1,60 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace DiskTree
+{
+    public class DiskTreeTask
+    {
+        public static IEnumerable Solve(List<string> input)
+        {
+            var root = new Folder("", -1);
+            foreach (var path in input.Select(str => new Queue<string>(str.Split('\\'))))
+                root.Add(path);
+            return root.AsEnumerable().Skip(1);
+        }
+    }
+
+    public class Folder
+    {
+        private readonly string name;
+        private readonly int nestingLevel;
+        private readonly SortedDictionary<string, Folder> subFolders =
+            new SortedDictionary<string, Folder>(StringComparer.Ordinal);
+
+        public Folder(string name, int nestingLevel)
+        {
+            this.name = name;
+            this.nestingLevel = nestingLevel;
+        }
+
+        public void Add(Queue<string> path)
+        {
+            if (path.Count == 0) return;
+
+            var subFolderName = path.Dequeue();
+            if (!subFolders.ContainsKey(subFolderName))
+                subFolders.Add(subFolderName, new Folder(subFolderName, this.nestingLevel + 1));
+
+            subFolders[subFolderName].Add(path);
+        }
+
+        public IEnumerable<string> AsEnumerable()
+        {
+            yield return this.ToString();
+            foreach (var folderName in subFolders.Select(s => s.Value.AsEnumerable()).SelectMany(s => s))
+                yield return folderName;
+        }
+
+        public override string ToString()
+        {
+            var str = new StringBuilder();
+            for (var i = 0; i < nestingLevel; i++)
+                str.Append(' ');
+            str.Append(name);
+            return str.ToString();
+        }
+    }
+}
