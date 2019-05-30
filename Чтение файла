@@ -1,0 +1,43 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace linq_slideviews
+{
+	public class ParsingTask
+	{
+		public static IDictionary<int, SlideRecord> ParseSlideRecords(IEnumerable<string> lines)
+		{
+			var id = 0;
+			var type = default(SlideType);
+
+			return lines
+				.Select(line => line.Split(';'))
+				.Where(slideData => slideData.Count() == 3 && int.TryParse(slideData[0], out id)
+				                                           && SlideType.TryParse(slideData[1], true, out type))
+				.ToDictionary(slideData => id, slideData => new SlideRecord(id, type, slideData[2]));
+		}
+
+		public static IEnumerable<VisitRecord> ParseVisitRecords(
+			IEnumerable<string> lines, IDictionary<int, SlideRecord> slides)
+		{
+			var userId = 0;
+			var slideId = 0;
+			var dateTime = new DateTime();
+
+			return lines.Skip(1)
+				.Select(str => str.Split(';'))
+				.Where(recordData =>
+					{
+						if (recordData.Count() == 4 && int.TryParse(recordData[0], out userId) &&
+						    int.TryParse(recordData[1], out slideId) &&
+						    DateTime.TryParse(recordData[2] + ' ' + recordData[3], out dateTime) && 
+						    slides.ContainsKey(slideId))
+							return true;
+						throw new FormatException("Wrong line [" + string.Join(";", recordData) + "]");
+					}
+				)
+				.Select(r => new VisitRecord(userId, slideId, dateTime, slides[slideId].SlideType));
+		}
+	}
+}
