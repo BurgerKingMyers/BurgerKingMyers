@@ -1,0 +1,49 @@
+using System;
+using System.Configuration;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.UI.WebControls;
+using DocumentTokens = System.Collections.Generic.List<string>;
+
+namespace Antiplagiarism
+{
+    public class LevenshteinCalculator
+    {
+        public List<ComparisonResult> CompareDocumentsPairwise(List<DocumentTokens> documents)
+        {
+            var result = new List<ComparisonResult>();
+            for (var i = 0; i < documents.Count; i++)
+            for (var j = i + 1; j < documents.Count; j++)
+                result.Add(new ComparisonResult(documents[i], documents[j],
+                    GetDistance(documents[i], documents[j])));
+            return result;
+        }
+
+        private double GetDistance(DocumentTokens first, DocumentTokens second)
+        {
+            var previous = new double[0];
+            var current = new double[second.Count + 1];
+            for (var i = 0; i < current.Length; i++) 
+                current[i] = i;
+
+            for (var i = 1; i <= first.Count; i++)
+            {
+                previous = current;
+                current = new double[second.Count + 1];
+                current[0] = i;
+                for (var j = 1; j <= second.Count; j++)
+                {
+                    if (first[i - 1] == second[j - 1])
+                        current[j] = previous[j - 1];
+                    else
+                        current[j] = Math.Min(
+                            TokenDistanceCalculator.GetTokenDistance(first[i - 1], second[j - 1]) + previous[j - 1],
+                            1 + Math.Min(current[j - 1], previous[j]));
+                }
+            }
+
+            return current[current.Length - 1];
+        }
+    }
+}
+
