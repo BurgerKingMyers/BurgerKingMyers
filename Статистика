@@ -1,0 +1,24 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace linq_slideviews
+{
+	public class StatisticsTask
+	{
+		public static double GetMedianTimePerSlide(List<VisitRecord> visits, SlideType slideType)
+		{
+			var timeIntervals = visits
+				.OrderBy(visit => visit.UserId)
+				.ThenBy(visit => visit.DateTime)
+				.Bigrams()
+				.Where(tuple => tuple.Item1.UserId == tuple.Item2.UserId && tuple.Item1.SlideType == slideType)
+				.Select(tuple => (tuple.Item2.DateTime - tuple.Item1.DateTime).TotalMinutes)
+				.Where(time => time >= 1 && time <= 120)
+				.OrderBy(x => x)
+				.ToList();
+
+			return timeIntervals.Count == 0 ? 0 : timeIntervals.Median();
+		}
+	}
+}
