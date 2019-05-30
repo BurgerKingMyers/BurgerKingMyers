@@ -1,0 +1,37 @@
+using System;
+using System.Collections.Generic;
+using System.Xml.Schema;
+
+namespace func_rocket
+{
+	public class LevelsTask
+	{
+		static readonly Physics standardPhysics = new Physics();
+
+		public static IEnumerable<Level> CreateLevels()
+		{
+			yield return new Level("Zero", CreateRocket, CreateTarget,
+				(size, v) => Vector.Zero, standardPhysics);
+			yield return new Level("Heavy", CreateRocket, CreateTarget,
+				(size, v) => new Vector(0, 0.9), standardPhysics);
+			yield return new Level("Up", CreateRocket, new Vector(700, 500),
+				(size, v) => new Vector(0, -(300 / (300 + size.Height - v.Y))), standardPhysics);
+			yield return new Level("WhiteHole", CreateRocket, CreateTarget,
+				(size, v) => ApplyForce(WhiteHoleForce, v, -140), standardPhysics);
+			yield return new Level("BlackHole", CreateRocket, CreateTarget,
+				(size, v) => ApplyForce(AnomalyForce, v, 300), standardPhysics);
+			yield return new Level("BlackAndWhite", CreateRocket, CreateTarget,
+				(size, v) => (ApplyForce(WhiteHoleForce, v, -140) + ApplyForce(AnomalyForce, v, 300)) / 2,
+				standardPhysics);
+		}
+    
+		private static Rocket CreateRocket => new Rocket(new Vector(200, 500), Vector.Zero, -0.5 * Math.PI);
+		private static Vector CreateTarget => new Vector(600, 200);
+		private static Vector ApplyForce(Func<Vector, Vector> force, Vector target, double multiplicator) 
+			=> new Vector(GetForceAbs(force(target).Length, multiplicator), 0).Rotate(force(target).Angle);
+		private static Vector AnomalyForce(Vector v) => new Vector(400 - v.X, 350 - v.Y);
+		private static Vector WhiteHoleForce(Vector v) => new Vector(600 - v.X, 200 - v.Y);
+		private static double GetForceAbs(double length, double multiplicator) =>
+			(length * multiplicator) / (length * length + 1);
+	}
+}
