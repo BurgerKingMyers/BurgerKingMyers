@@ -1,0 +1,23 @@
+using System;
+
+namespace func_rocket
+{
+	public class ControlTask
+	{
+		public static Turn ControlRocket(Rocket rocket, Vector target)
+		{
+			//Увеличение множителя ускорения пропорционально расстоянию от цели.
+			var timeScale = new Vector(target.X - rocket.Location.X,target.Y - rocket.Location.Y).Length/25;
+			//Подсчет примерных координат ракеты через некоторое время (timeScale).
+			var futurePosition = rocket.Location + rocket.Velocity * timeScale;
+			//Нахождение угла отклонения курса от цели.
+			var headingAngle = new Vector(target.X - futurePosition.X,target.Y - futurePosition.Y).Angle - rocket.Direction;
+			//Поворот в случае слишком большого отклонения.
+			if (Math.Abs(headingAngle) < 0.02)
+				return Turn.None;
+			if (headingAngle < 0)
+				return Turn.Left;
+			return Turn.Right;
+		}
+	}
+}
