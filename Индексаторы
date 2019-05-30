@@ -1,0 +1,122 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace BinaryTrees
+{
+    public class BinaryTree<T> : IEnumerable<T> where T : IComparable
+    {
+        private Node<T> root;
+        
+        public bool Contains(T key)
+        {
+            if (root == null)
+                return false;
+            var node = root;
+            while (true)
+            {
+                if (node.Value.CompareTo(key) == 0)
+                    return true;
+                
+                if (node.Value.CompareTo(key) < 0)
+                {
+                    if (node.Right == null)
+                        return false;
+                    node = node.Right;
+                }
+                else
+                {
+                    if (node.Left == null)
+                        return false;
+                    node = node.Left;
+                }
+            }
+        }
+
+        public void Add(T key)
+        {
+            var node = root;
+
+            if (root == null)
+                root = new Node<T>(key);
+            else
+                while (true)
+                {
+                    if (node.Value.CompareTo(key) < 0)
+                    {
+                        if (TryAddNode(key,ref node.Right))
+                            break;
+                        node = node.Right;
+                    }
+                    else
+                    {
+                        node.SubTreeCount++;
+                        if (TryAddNode(key,ref node.Left))
+                            break;
+                        node = node.Left;
+                    }
+                }
+        }
+
+        private static bool TryAddNode(T key, ref Node<T> node)
+        {
+            if (node != null) return false;
+            node = new Node<T>(key);
+            return true;
+        }
+        
+        private static IEnumerable<T> GetValuesByOrder(Node<T> root)
+        {
+            if (root.Left != null)
+                foreach (var value in GetValuesByOrder(root.Left))
+                    yield return value;
+            yield return root.Value;
+            if (root.Right != null)
+                foreach (var value in GetValuesByOrder(root.Right))
+                    yield return value;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return GetValuesByOrder(root).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public T this[int index]
+        {
+            get
+            {
+                var node = root;
+                while (true)
+                {
+                    if (index == node.SubTreeCount)
+                        return node.Value;
+
+                    if (index > node.SubTreeCount)
+                    {
+                        index -= node.SubTreeCount + 1;
+                        node = node.Right;
+                    }
+                    else
+                        node = node.Left;
+                }
+            }
+        }
+    }
+    
+    public class Node<T>
+    {
+        public readonly T Value;
+        public Node<T> Left, Right;
+        public int SubTreeCount;
+
+        public Node(T value)
+        {
+            Value = value;
+        }
+    }
+}
