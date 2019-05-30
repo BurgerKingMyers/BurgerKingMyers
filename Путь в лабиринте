@@ -1,0 +1,102 @@
+using System.Collections.Generic;
+using System.Linq;
+using Greedy.Architecture;
+using System.Drawing;
+
+namespace Greedy
+{
+    public class DijkstraPathFinder
+    {
+        private Dictionary<Point, DijkstraData> track;
+        private List<Point> notOpened;
+        private HashSet<Point> opened;
+        private State state;
+        
+        public IEnumerable<PathWithCost> GetPathsByDijkstra(State graph, Point start,
+            IEnumerable<Point> targets)
+        {
+            Init(graph,start);
+            while (notOpened.Count != 0)
+            {
+                var point = FindPointToOpen();
+                Open(point);
+                UpdateIncidentPoints(point);
+                if (state.Chests.Contains(point))
+                    yield return CreatePath(start, point);
+            }
+        }
+
+        private void Init(State graph, Point start)
+        {
+            state = graph;
+            track = new Dictionary<Point, DijkstraData>();
+            track[start] = new DijkstraData() {Cost = 0, Previous = new Point(-1,-1)};
+            notOpened = new List<Point>() {start};
+            opened = new HashSet<Point>();
+        }
+        
+        private Point FindPointToOpen()
+        {
+            var bestPrice = int.MaxValue;
+            var toOpen = default(Point);
+            foreach (var point in notOpened)
+                if (track[point].Cost < bestPrice)
+                {
+                    bestPrice = track[point].Cost;
+                    toOpen = point;
+                }
+
+            return toOpen;
+        }
+        
+        private void Open(Point toOpen)
+        {
+            notOpened.Remove(toOpen);
+            opened.Add(toOpen);
+        }
+        
+        private void UpdateIncidentPoints(Point toOpen)
+        {
+            foreach (var point in toOpen
+                .IncidentPoints()
+                .Where(p => state.InsideMap(p) && !state.IsWallAt(p) && !opened.Contains(p)))
+            {
+                var currentCost = state.CellCost[point.X, point.Y] + track[toOpen].Cost;
+                if (currentCost >= 0 && (!track.ContainsKey(point) || track[point].Cost > currentCost))
+                {
+                    track[point] = new DijkstraData() {Cost = currentCost, Previous = toOpen};
+                    notOpened.Add(point);
+                }
+            }
+        }
+        
+        private PathWithCost CreatePath(Point start, Point end)
+        {
+            var nextPoint = end;
+            var path = new Stack<Point>();
+            while (nextPoint.X != -1 && nextPoint.Y != -1)
+            {
+                path.Push(nextPoint);
+                nextPoint = track[nextPoint].Previous;
+            }
+            return new PathWithCost(track[end].Cost,path.ToArray());
+        } 
+    }
+    
+    public class DijkstraData
+    {
+        public Point Previous = default(Point);
+        public int Cost = int.MaxValue;
+    }
+
+    public static class Extensions
+    {
+        public static IEnumerable<Point> IncidentPoints(this Point point)
+        {
+            for (var dx = -1; dx <= 1; dx++)
+            for (var dy = -1; dy <= 1; dy++)
+                if ((dx + dy) % 2 != 0)
+                    yield return new Point(point.X + dx, point.Y + dy);
+        }            
+    }
+}
