@@ -1,0 +1,36 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Dungeon
+{
+	public class BfsTask
+	{
+		public static IEnumerable<SinglyLinkedList<Point>> FindPaths(Map map, Point start, Point[] chests)
+		{
+			var queue = new Queue<SinglyLinkedList<Point>>();
+			queue.Enqueue(new SinglyLinkedList<Point>(start));
+			var visitedCells = new HashSet<Point>();
+			while (queue.Count != 0)
+			{
+				var currentPath = queue.Dequeue();
+				if (!map.InBounds(currentPath.Value) 
+				    || map.Dungeon[currentPath.Value.X,currentPath.Value.Y] == MapCell.Wall 
+				    || visitedCells.Contains(currentPath.Value)) 
+					continue;
+				for (var dx = -1; dx <= 1; dx++)
+				for (var dy = -1; dy <= 1; dy++)
+					if ((dx + dy) % 2 != 0) 
+						queue.Enqueue(new SinglyLinkedList<Point>(
+							new Point(currentPath.Value.X + dx, currentPath.Value.Y + dy)
+							,currentPath));
+				if (chests.Contains(currentPath.Value))
+					yield return currentPath;
+				visitedCells.Add(currentPath.Value);
+			}
+		}
+	}
+}
