@@ -1,0 +1,86 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Text;
+using System.Linq;
+using System.Runtime.InteropServices;
+using Greedy.Architecture;
+using Greedy.Architecture.Drawing;
+
+namespace Greedy
+{
+    public class NotGreedyPathFinder : IPathFinder
+    {
+        private DijkstraPathFinder pathFinder = new DijkstraPathFinder();
+
+        private Dictionary<Point, Dictionary<Point, PathWithCost>> knownPaths =
+            new Dictionary<Point, Dictionary<Point, PathWithCost>>();
+
+        public List<Point> FindPathToCompleteGoal(State state)
+        {
+            InitPathsFromState(state);
+
+            var start = new Node(state.InitialEnergy, 0, new HashSet<Point>() {state.Position}, state.Position,
+                new List<PathWithCost>());
+            var queue = new Queue<Node>();
+            queue.Enqueue(start);
+            var bestPath = start;
+
+            while (queue.Count != 0)
+            {
+                var path = queue.Dequeue();
+                if (path.Score > bestPath.Score)
+                    bestPath = path;
+                foreach (var p in path.GetIncidentPaths(knownPaths))
+                    queue.Enqueue(p);
+            }
+
+            return bestPath.CreatePath();
+        }
+
+        private void InitPathsFromState(State state)
+        {
+            state.Chests.Add(state.Position);
+            foreach (var target in state.Chests)
+            foreach (var path in pathFinder.GetPathsByDijkstra(state, target, state.Chests.Where(t => t != target))
+                .TakeWhile(p => p.Cost <= state.InitialEnergy))
+            {
+                if (!knownPaths.ContainsKey(path.Start))
+                    knownPaths.Add(path.Start, new Dictionary<Point, PathWithCost>());
+                knownPaths[path.Start].Add(path.End, path);
+            }
+        }
+    }
+
+    public class Node
+    {
+        private readonly List<PathWithCost> paths;
+        private readonly Point position;
+        private readonly int energy;
+        public readonly int Score;
+        private readonly HashSet<Point> visited;
+
+        public Node(int energy, int score, HashSet<Point> visited, Point position, List<PathWithCost> paths)
+        {
+            this.energy = energy;
+            Score = score;
+            this.visited = visited;
+            this.position = position;
+            this.paths = paths;
+        }
+
+        public IEnumerable<Node> GetIncidentPaths(Dictionary<Point, Dictionary<Point, PathWithCost>> knownPaths) =>
+            knownPaths[position]
+                .Select(path => path.Value.End)
+                .Where(target => !visited.Contains(target) && knownPaths[position][target].Cost <= energy)
+                .Select(target => new Node(energy - knownPaths[position][target].Cost,
+                    Score + 1, new HashSet<Point>(visited) {target}, target,
+                    new List<PathWithCost>(paths) {knownPaths[position][target]}));
+
+        public List<Point> CreatePath() => 
+                paths
+                .SelectMany(path => path.Path.Skip(1))
+                .ToList();
+    }
+}
