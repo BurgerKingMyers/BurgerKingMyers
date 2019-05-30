@@ -1,0 +1,45 @@
+using System;
+using System.Collections.Generic;
+
+namespace TodoApplication
+{
+    public class ListModel<TItem>
+    {
+        private LimitedSizeStack<Tuple<string,TItem,int>> lastActions;
+        public List<TItem> Items { get; }
+        public int Limit;
+
+        public ListModel(int limit)
+        {
+            Items = new List<TItem>();
+            Limit = limit;
+            lastActions = new LimitedSizeStack<Tuple<string,TItem,int>>(limit);
+        }
+
+        public void AddItem(TItem item)
+        {
+            lastActions.Push(new Tuple<string,TItem,int>("add",item,Items.Count));
+            Items.Add(item);
+        }
+
+        public void RemoveItem(int index)
+        {
+            lastActions.Push(new Tuple<string,TItem,int>("remove",Items[index],index));
+            Items.RemoveAt(index);
+        }
+
+        public bool CanUndo()
+        {
+            return lastActions.Count > 0;
+        }
+
+        public void Undo()
+        {
+            var cmd = lastActions.Pop();
+            if (cmd.Item1 == "add")
+                Items.RemoveAt(cmd.Item3);
+            else if (cmd.Item1 == "remove")
+                Items.Insert(cmd.Item3,cmd.Item2);
+        }
+    }
+}
